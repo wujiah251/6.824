@@ -1,16 +1,18 @@
 package mapreduce
 
-import "fmt"
-import "os"
-import "log"
-import "strconv"
-import "encoding/json"
-import "sort"
-import "container/list"
-import "net/rpc"
-import "net"
-import "bufio"
-import "hash/fnv"
+import (
+	"bufio"
+	"container/list"
+	"encoding/json"
+	"fmt"
+	"hash/fnv"
+	"log"
+	"net"
+	"net/rpc"
+	"os"
+	"sort"
+	"strconv"
+)
 
 // import "os/exec"
 
@@ -150,9 +152,10 @@ func (mr *MapReduce) Split(fileName string) {
 		log.Fatal("Split: ", err)
 	}
 	size := fi.Size()
+	// nchunk为每个文件的字节数上限
 	nchunk := size / int64(mr.nMap)
 	nchunk += 1
-
+	// 打开一个中间临时输出文件
 	outfile, err := os.Create(MapName(fileName, 0))
 	if err != nil {
 		log.Fatal("Split: ", err)
@@ -163,6 +166,7 @@ func (mr *MapReduce) Split(fileName string) {
 
 	scanner := bufio.NewScanner(infile)
 	for scanner.Scan() {
+		// 是否创建新的临时文件
 		if int64(i) > nchunk*int64(m) {
 			writer.Flush()
 			outfile.Close()
@@ -190,8 +194,14 @@ func ihash(s string) uint32 {
 
 // Read split for job, call Map for that split, and create nreduce
 // partitions.
+// jobNumber：第几个map作业
+// filename：输入文件名
+// nReduce：reduce进程数
+// map：map函数
+
 func DoMap(JobNumber int, fileName string,
 	nreduce int, Map func(string) *list.List) {
+	// 生成map进程输入文件的文件名
 	name := MapName(fileName, JobNumber)
 	file, err := os.Open(name)
 	if err != nil {
@@ -209,8 +219,9 @@ func DoMap(JobNumber int, fileName string,
 		log.Fatal("DoMap: ", err)
 	}
 	file.Close()
+	// 文件数据读入b，然后传递给Map函数
 	res := Map(string(b))
-	// XXX a bit inefficient. could open r files and run over list once
+
 	for r := 0; r < nreduce; r++ {
 		file, err = os.Create(ReduceName(fileName, JobNumber, r))
 		if err != nil {
@@ -341,14 +352,21 @@ func (mr *MapReduce) CleanupFiles() {
 }
 
 // Run jobs sequentially.
+// 启动一个mapreduce任务
+// 传参数map进程数、reduce进程数、输入文件名
+// map函数、reduce函数
 func RunSingle(nMap int, nReduce int, file string,
 	Map func(string) *list.List,
 	Reduce func(string, *list.List) string) {
+	// 初始化一个mapreduce实例
 	mr := InitMapReduce(nMap, nReduce, file, "")
+	// 划分文件，命名规则，file0、file1、file2
 	mr.Split(mr.file)
+	// 启动map程序
 	for i := 0; i < nMap; i++ {
 		DoMap(i, mr.file, mr.nReduce, Map)
 	}
+	// 启动reduce程序
 	for i := 0; i < mr.nReduce; i++ {
 		DoReduce(i, mr.file, mr.nMap, Reduce)
 	}
