@@ -53,3 +53,48 @@ the: 62075
 ```
 
 我们看代码(src/main/wc.go)
+```Golang
+func main() {
+	if len(os.Args) != 4 {
+		fmt.Printf("%s: see usage comments in file\n", os.Args[0])
+	} else if os.Args[1] == "master" {
+		if os.Args[3] == "sequential" {
+			// part1会运行到这里
+			// 这里是运行一个mapreduce集群，5个map进程、3个reduce进程
+			mapreduce.RunSingle(5, 3, os.Args[2], Map, Reduce)
+		} else {
+			mr := mapreduce.MakeMapReduce(5, 3, os.Args[2], os.Args[3])
+			// Wait until MR is done
+			<-mr.DoneChannel
+		}
+	} else {
+		mapreduce.RunWorker(os.Args[2], os.Args[3], Map, Reduce, 100)
+	}
+}
+```
+结合命令行我们可以看出，这里运行了到了mapreduce.RunSignle，点进去看实现。
+```Golang
+// Run jobs sequentially.
+// 启动一个mapreduce任务
+// 传参数map进程数、reduce进程数、输入文件名
+// map函数、reduce函数
+func RunSingle(nMap int, nReduce int, file string,
+	Map func(string) *list.List,
+	Reduce func(string, *list.List) string) {
+	// 初始化一个mapreduce实例
+	mr := InitMapReduce(nMap, nReduce, file, "")
+	// 划分文件，命名规则，file0、file1、file2
+	mr.Split(mr.file)
+	// 启动map程序
+	for i := 0; i < nMap; i++ {
+		DoMap(i, mr.file, mr.nReduce, Map)
+	}
+	// 启动reduce程序
+	for i := 0; i < mr.nReduce; i++ {
+		DoReduce(i, mr.file, mr.nMap, Reduce)
+	}
+	mr.Merge()
+}
+```
+这里不难理解，点进去看一下，DoMap的DoReduce给map函数和reduce函数的输入和输出即可知道如何实现。
+

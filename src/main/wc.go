@@ -9,14 +9,7 @@ import (
 	"6.824/src/mapreduce"
 )
 
-// map:key->word,value->count
-// reduce:key->word,value->count
 
-// our simplified version of MapReduce does not supply a
-// key to the Map function, as in the paper; only a value,
-// which is a part of the input file content. the return
-// value should be a list of key/value pairs, each represented
-// by a mapreduce.KeyValue.
 
 func isAlpha(ch uint8) bool {
 	return ch <= 'z' && ch >= 'a' || ch <= 'Z' && ch >= 'A'
