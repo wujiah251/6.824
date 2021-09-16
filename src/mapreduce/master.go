@@ -33,9 +33,6 @@ func (mr *MapReduce) KillWorkers() *list.List {
 // 主要是要实现这个函数
 // 模拟运行master进程，
 func (mr *MapReduce) RunMaster() *list.List {
-	// Your code here
-	// master的工作：
-	// 第一：创建workers
 	var wg sync.WaitGroup
 	wg.Add(mr.nMap)
 	for i := 0; i != mr.nMap; i++ {
@@ -48,15 +45,18 @@ func (mr *MapReduce) RunMaster() *list.List {
 		go func(doJobArgs DoJobArgs, registerChan chan string) {
 			// 获取一个可用worker的address
 			address := <-registerChan
-			call(address, "Worker.DoJob", doJobArgs, nil)
+			for ok := false; !ok; ok = call(address, "Worker.DoJob", doJobArgs, nil) {
+			}
 			// 释放一个可用worker
-			registerChan <- address
+			go func() {
+				registerChan <- address
+			}()
 			wg.Done()
 		}(doJobArgs, mr.registerChannel)
 	}
 	wg.Wait()
 	wg.Add(mr.nReduce)
-	for i := 0; i != mr.nMap; i++ {
+	for i := 0; i != mr.nReduce; i++ {
 		doJobArgs := DoJobArgs{
 			File:          mr.file,
 			Operation:     Reduce,
@@ -65,8 +65,11 @@ func (mr *MapReduce) RunMaster() *list.List {
 		}
 		go func(doJobArgs DoJobArgs, registerChan chan string) {
 			address := <-registerChan
-			call(address, "Worker.DoJob", doJobArgs, nil)
-			registerChan <- address
+			for ok := false; !ok; ok = call(address, "Worker.DoJob", doJobArgs, nil) {
+			}
+			go func() {
+				registerChan <- address
+			}()
 			wg.Done()
 		}(doJobArgs, mr.registerChannel)
 	}
