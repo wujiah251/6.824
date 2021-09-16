@@ -1,14 +1,19 @@
 package mapreduce
 
-import "fmt"
-import "os"
-import "log"
-import "net/rpc"
-import "net"
-import "container/list"
+import (
+	"container/list"
+	"fmt"
+	"log"
+	"net"
+	"net/rpc"
+	"os"
+)
 
 // Worker is a server waiting for DoJob or Shutdown RPCs
 
+// worker是一个service
+// 支持三种rpc接口
+// DoJob、Shutdown
 type Worker struct {
 	name   string
 	Reduce func(string, *list.List) string
@@ -45,6 +50,7 @@ func (wk *Worker) Shutdown(args *ShutdownArgs, res *ShutdownReply) error {
 }
 
 // Tell the master we exist and ready to work
+// 注册一个
 func Register(master string, me string) {
 	args := &RegisterArgs{}
 	args.Worker = me

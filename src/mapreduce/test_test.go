@@ -1,15 +1,17 @@
 package mapreduce
 
-import "testing"
-import "fmt"
-import "time"
-import "container/list"
-import "strings"
-import "os"
-import "bufio"
-import "log"
-import "sort"
-import "strconv"
+import (
+	"bufio"
+	"container/list"
+	"fmt"
+	"log"
+	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"testing"
+	"time"
+)
 
 const (
 	nNumber = 100000
@@ -135,6 +137,7 @@ func cleanup(mr *MapReduce) {
 
 func TestBasic(t *testing.T) {
 	fmt.Printf("Test: Basic mapreduce ...\n")
+	// 启动
 	mr := setup()
 	for i := 0; i < 2; i++ {
 		go RunWorker(mr.MasterAddress, port("worker"+strconv.Itoa(i)),

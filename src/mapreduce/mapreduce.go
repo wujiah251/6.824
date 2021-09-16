@@ -105,6 +105,7 @@ func (mr *MapReduce) Shutdown(args *ShutdownArgs, res *ShutdownReply) error {
 	return nil
 }
 
+// 向服务器注册服务
 func (mr *MapReduce) StartRegistrationServer() {
 	rpcs := rpc.NewServer()
 	rpcs.Register(mr)
@@ -115,8 +116,7 @@ func (mr *MapReduce) StartRegistrationServer() {
 	}
 	mr.l = l
 
-	// now that we are listening on the master address, can fork off
-	// accepting connections to another thread.
+	// accept接收连接
 	go func() {
 		for mr.alive {
 			conn, err := mr.l.Accept()
@@ -126,7 +126,7 @@ func (mr *MapReduce) StartRegistrationServer() {
 					conn.Close()
 				}()
 			} else {
-				DPrintf("RegistrationServer: accept error", err)
+				// DPrintf("RegistrationServer: accept error", err)
 				break
 			}
 		}
@@ -384,6 +384,7 @@ func (mr *MapReduce) CleanupRegistration() {
 }
 
 // Run jobs in parallel, assuming a shared file system
+// 启动MapReduce
 func (mr *MapReduce) Run() {
 	fmt.Printf("Run mapreduce job %s %s\n", mr.MasterAddress, mr.file)
 
