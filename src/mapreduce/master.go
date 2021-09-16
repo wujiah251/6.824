@@ -44,8 +44,9 @@ func (mr *MapReduce) RunMaster() *list.List {
 		}
 		go func(doJobArgs DoJobArgs, registerChan chan string) {
 			// 获取一个可用worker的address
-			address := <-registerChan
+			var address string
 			for ok := false; !ok; ok = call(address, "Worker.DoJob", doJobArgs, nil) {
+				address = <-registerChan
 			}
 			// 释放一个可用worker
 			go func() {
@@ -64,8 +65,9 @@ func (mr *MapReduce) RunMaster() *list.List {
 			NumOtherPhase: mr.nMap,
 		}
 		go func(doJobArgs DoJobArgs, registerChan chan string) {
-			address := <-registerChan
+			var address string
 			for ok := false; !ok; ok = call(address, "Worker.DoJob", doJobArgs, nil) {
+				address = <-registerChan
 			}
 			go func() {
 				registerChan <- address
